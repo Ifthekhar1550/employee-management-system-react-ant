@@ -1,23 +1,34 @@
-// AddEmployeeForm.js
 import React from "react";
-import { Modal, Input, Form } from "antd";
+import { Modal, Input, Form, Button } from "antd";
 
 const AddEmployeeForm = ({ visible, onCancel, onAddEmployee }) => {
   const [form] = Form.useForm();
 
   const handleOk = () => {
-    form.validateFields().then((values) => {
-      onAddEmployee(values);
-      form.resetFields();
-    });
+    form
+      .validateFields()
+      .then((values) => {
+        onAddEmployee(values);
+        form.resetFields();
+      })
+      .catch((errorInfo) => {
+        console.log("Validation failed:", errorInfo);
+      });
   };
 
   return (
     <Modal
       title="Add Employee"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
-      onOk={handleOk}
+      footer={[
+        <Button key="cancel" onClick={onCancel}>
+          Cancel
+        </Button>,
+        <Button key="add" type="primary" danger onClick={handleOk}>
+          Add
+        </Button>,
+      ]}
     >
       <Form form={form} layout="vertical">
         <Form.Item

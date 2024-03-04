@@ -1,0 +1,55 @@
+
+.max-width{
+    margin: 0 auto;
+    width: 84%;
+ 
+}
+
+.header {
+  background: #fff;
+  padding: 16px;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  color: #1890ff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.custom-flex {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.tableWrapper {
+  margin-bottom: 16px;
+}
+.custom-content {
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+
+.actions-container {
+  display: flex;
+  align-items: center;
+}
+
+.action-button {
+  margin: 0 8px;
+}
+.action-button {
+  &.checked {
+    background-color: #9fa09f; 
+  color: black;
+}
+
+  &.unchecked {
+    background-color: #1890ff;
+    color: #fff;
+  }
+}

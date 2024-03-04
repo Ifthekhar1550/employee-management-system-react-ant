@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import AddEmployeeForm from "./components/AddEmployeeForm";
-import { Table, Button, Switch, Modal, Layout, Typography } from "antd";
+import { Table, Button, Switch, Modal, Layout, Typography, Input } from "antd";
+import { RiDeleteBin6Fill } from "react-icons/ri";
 import axios from "axios";
+import "../Admin/components/Css/Admin.css"
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -19,6 +21,10 @@ const EmployeeList = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [blockConfirmationVisible, setBlockConfirmationVisible] =
+    useState(false);
+  const [unblockConfirmationVisible, setUnblockConfirmationVisible] =
+    useState(false);
+  const [deleteConfirmationVisible, setDeleteConfirmationVisible] =
     useState(false);
 
   const columns = [
@@ -42,18 +48,26 @@ const EmployeeList = () => {
       dataIndex: "actions",
       key: "actions",
       render: (_, record) => (
-        <div>
+        <div className="actions-container">
           <Button onClick={() => showDetails(record)}>Details</Button>
           <Switch
+            className={`action-button ${
+              record.blocked ? "checked" : "unchecked"
+            }`}
             checkedChildren="Block"
             unCheckedChildren="Unblock"
             defaultChecked={!record.blocked}
-            onChange={() => showBlockConfirmation(record)}
+            onChange={(unchecked) =>
+              unchecked
+                ? showUnblockConfirmation(record)
+                : showBlockConfirmation(record)
+            }
           />
           <Button
-            type="danger"
-            icon="delete"
-            onClick={() => handleDelete(record.id)}
+            type="primary"
+            danger
+            icon={<RiDeleteBin6Fill />}
+            onClick={() => showDeleteConfirmation(record)}
           />
         </div>
       ),
@@ -62,13 +76,13 @@ const EmployeeList = () => {
 
   const handleAddEmployee = async (values) => {
     try {
-      // Simulate the addition locally (since JSONPlaceholder doesn't support POST)
+      
       const newEmployee = {
         id: Date.now(),
         name: `${values.firstName} ${values.lastName}`,
         email: values.email,
         phone: values.phone,
-        blocked: false, // Set the initial status to 'active' and 'unblocked'
+        blocked: false,
       };
 
       // Update the local state to include the new employee at the beginning
@@ -101,19 +115,19 @@ const EmployeeList = () => {
     setModalVisible(true);
   };
 
-  const handleBlockToggle = async (employeeId) => {
-    try {
-      const currentEmployee = employees.find(
-        (employee) => employee.id === employeeId
-      );
+const handleBlockToggle = async (employeeId) => {
+  try {
+    const currentEmployee = employees.find(
+      (employee) => employee.id === employeeId
+    );
 
-      // Show the block confirmation modal
-      setSelectedEmployee(currentEmployee);
-      setBlockConfirmationVisible(true);
-    } catch (error) {
-      console.error("Error toggling block status:", error);
-    }
-  };
+    // Show the block confirmation modal
+    setSelectedEmployee(currentEmployee);
+    showBlockConfirmation(currentEmployee);
+  } catch (error) {
+    console.error("Error toggling block status:", error);
+  }
+};
 
   const handleDelete = async (employeeId) => {
     try {
@@ -160,7 +174,7 @@ const EmployeeList = () => {
       // Simulate the block confirmation locally
       const updatedEmployees = employees.map((employee) =>
         employee.id === selectedEmployee.id
-          ? { ...employee, blocked: !employee.blocked }
+          ? { ...employee, blocked: true }
           : employee
       );
 
@@ -172,32 +186,85 @@ const EmployeeList = () => {
     setBlockConfirmationVisible(false);
   };
 
+ const handleUnblockConfirmation = (confirm) => {
+   if (confirm) {
+     // Simulate the unblock confirmation locally
+     const updatedEmployees = employees.map((employee) =>
+       employee.id === selectedEmployee.id
+         ? { ...employee, blocked: false }
+         : employee
+     );
+
+     // Update the local state to reflect the change
+     setEmployees(updatedEmployees);
+   }
+
+   // Close the unblock confirmation modal
+   setUnblockConfirmationVisible(false);
+ };
+
+
+  const handleDeleteConfirmation = async (confirm) => {
+    if (confirm) {
+      try {
+        // Send a DELETE request to the server
+        await axios.delete(
+          `https://jsonplaceholder.typicode.com/users/${selectedEmployee.id}`
+        );
+
+        // Update the local state to remove the deleted employee
+        setEmployees((prevEmployees) =>
+          prevEmployees.filter(
+            (employee) => employee.id !== selectedEmployee.id
+          )
+        );
+      } catch (error) {
+        console.error("Error deleting employee:", error);
+      }
+    }
+
+    // Close the delete confirmation modal
+    setDeleteConfirmationVisible(false);
+  };
+
   const showBlockConfirmation = (employee) => {
     setSelectedEmployee(employee);
     setBlockConfirmationVisible(true);
+    setUnblockConfirmationVisible(false); 
+  };
+
+const showUnblockConfirmation = (employee) => {
+  setSelectedEmployee(employee);
+  setUnblockConfirmationVisible(true);
+};
+
+
+
+  const showDeleteConfirmation = (employee) => {
+    setSelectedEmployee(employee);
+    setDeleteConfirmationVisible(true);
   };
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Header
-        style={{ background: "#fff", padding: "16px", textAlign: "center" }}
-      >
-        <Title level={3} style={{ margin: 0 }}>
-          Asif.inc Employee Dashboard
+    <Layout className="max-width">
+      <Header className="header">
+        <Title level={4} className="title">
+          Asif.inc Employee List
         </Title>
       </Header>
-      <Content style={{ padding: "16px" }}>
-        <div style={{ marginBottom: "16px" }}>
-          <Button type="primary" onClick={() => setAddFormVisible(true)}>
-            Add Employee
+      <Content className="custom-content">
+        <div className="custom-flex">
+          <Button type="primary" danger onClick={() => setAddFormVisible(true)}>
+            + Add Employee
           </Button>
         </div>
         <Table
           dataSource={employees}
           columns={columns}
+          className="tableWrapper"
           pagination={{
-            current: 1, // Set the current page to 1 after adding an employee
-            pageSize: 10, // Adjust the pageSize according to your requirements
+            current: 1,
+            pageSize: 10, 
           }}
         />
         {/* Modal for adding employee */}
@@ -209,16 +276,28 @@ const EmployeeList = () => {
         {/* Modal for viewing employee details */}
         <Modal
           title="Employee Details"
-          visible={modalVisible}
+          open={modalVisible}
           onCancel={() => setModalVisible(false)}
-          onOk={handleSaveDetails}
+          footer={[
+            <Button key="cancel" onClick={() => setModalVisible(false)}>
+              Cancel
+            </Button>,
+            <Button
+              key="save"
+              type="primary"
+              danger
+              onClick={handleSaveDetails}
+            >
+              {" "}
+              Save
+            </Button>,
+          ]}
         >
           {selectedEmployee && (
             <div>
               <p>
-                Full Name:{" "}
-                <input
-                  type="text"
+                <strong>Full Name:</strong>
+                <Input
                   value={selectedEmployee.name}
                   onChange={(e) =>
                     setSelectedEmployee({
@@ -228,11 +307,12 @@ const EmployeeList = () => {
                   }
                 />
               </p>
-              <p>Email: {selectedEmployee.email}</p>
               <p>
-                Phone:{" "}
-                <input
-                  type="text"
+                <strong>Email:</strong> {selectedEmployee.email}
+              </p>
+              <p>
+                <strong>Phone:</strong>
+                <Input
                   value={selectedEmployee.phone}
                   onChange={(e) =>
                     setSelectedEmployee({
@@ -245,14 +325,77 @@ const EmployeeList = () => {
             </div>
           )}
         </Modal>
-        {/* Modal for block confirmation */}
+
         <Modal
           title="Block Confirmation"
-          visible={blockConfirmationVisible}
+          open={blockConfirmationVisible}
           onCancel={() => setBlockConfirmationVisible(false)}
-          onOk={() => handleBlockConfirmation(true)}
+          footer={[
+            <Button
+              key="cancel"
+              onClick={() => setBlockConfirmationVisible(false)}
+            >
+              Cancel
+            </Button>,
+            <Button
+              key="block"
+              type="primary"
+              danger
+              onClick={() => handleBlockConfirmation(true)}
+            >
+              Block
+            </Button>,
+          ]}
         >
           <p>Are you sure you want to block this employee?</p>
+        </Modal>
+
+        <Modal
+          title="Unblock Confirmation"
+          open={unblockConfirmationVisible}
+          onCancel={() => setUnblockConfirmationVisible(false)}
+          footer={[
+            <Button
+              key="cancel"
+              onClick={() => setUnblockConfirmationVisible(false)}
+            >
+              Cancel
+            </Button>,
+            <Button
+              key="unblock"
+              type="primary"
+              danger
+              onClick={() => handleUnblockConfirmation(true)}
+            >
+              Unblock
+            </Button>,
+          ]}
+        >
+          <p>Are you sure you want to unblock this employee?</p>
+        </Modal>
+
+        <Modal
+          title="Delete Confirmation"
+          open={deleteConfirmationVisible}
+          onCancel={() => setDeleteConfirmationVisible(false)}
+          footer={[
+            <Button
+              key="cancel"
+              onClick={() => setDeleteConfirmationVisible(false)}
+            >
+              Cancel
+            </Button>,
+            <Button
+              key="delete"
+              type="primary"
+              danger
+              onClick={() => handleDeleteConfirmation(true)}
+            >
+              Delete
+            </Button>,
+          ]}
+        >
+          <p>Are you sure you want to delete this employee?</p>
         </Modal>
       </Content>
     </Layout>
